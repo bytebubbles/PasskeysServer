@@ -1,0 +1,16 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls",
+      "delegate_permission/common.get_login_creds"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.example.passkeydemobynative2",
+      "sha256_cert_fingerprints": [
+        "35:9E:3B:E6:83:AC:EC:78:AF:A6:23:C7:76:13:E1:0C:3F:D2:27:B6:49:2D:4E:5D:E5:B8:B9:01:AD:51:61:94"
+      ]
+    }
+  }
+]
+
