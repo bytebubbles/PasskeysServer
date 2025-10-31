@@ -1,0 +1,167 @@
+{
+  "info": {
+    "name": "Passkeys Server API",
+    "description": "通行密钥服务器 API 集合",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "健康检查",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/passkeys/health",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "passkeys", "health"]
+        },
+        "description": "检查服务器健康状态"
+      },
+      "response": []
+    },
+    {
+      "name": "开始注册",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser@example.com\",\n  \"displayName\": \"测试用户\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/passkeys/register/start",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "passkeys", "register", "start"]
+        },
+        "description": "开始通行密钥注册流程，获取注册选项"
+      },
+      "response": []
+    },
+    {
+      "name": "完成注册",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser@example.com\",\n  \"credential\": {\n    \"id\": \"...\",\n    \"rawId\": \"...\",\n    \"response\": {\n      \"attestationObject\": \"...\",\n      \"clientDataJSON\": \"...\"\n    },\n    \"type\": \"public-key\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/passkeys/register/finish",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "passkeys", "register", "finish"]
+        },
+        "description": "完成通行密钥注册，提交客户端返回的凭证"
+      },
+      "response": []
+    },
+    {
+      "name": "开始认证",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"testuser@example.com\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/passkeys/authenticate/start",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "passkeys", "authenticate", "start"]
+        },
+        "description": "开始通行密钥认证流程，获取认证选项"
+      },
+      "response": []
+    },
+    {
+      "name": "开始认证（可发现凭证）",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/passkeys/authenticate/start",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "passkeys", "authenticate", "start"]
+        },
+        "description": "使用可发现凭证开始认证（不指定用户名）"
+      },
+      "response": []
+    },
+    {
+      "name": "完成认证",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"credential\": {\n    \"id\": \"...\",\n    \"rawId\": \"...\",\n    \"response\": {\n      \"authenticatorData\": \"...\",\n      \"clientDataJSON\": \"...\",\n      \"signature\": \"...\",\n      \"userHandle\": \"...\"\n    },\n    \"type\": \"public-key\"\n  }\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/passkeys/authenticate/finish",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "passkeys", "authenticate", "finish"]
+        },
+        "description": "完成通行密钥认证，提交客户端返回的凭证"
+      },
+      "response": []
+    },
+    {
+      "name": "获取用户列表",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/passkeys/users",
+          "protocol": "http",
+          "host": ["localhost"],
+          "port": "8080",
+          "path": ["api", "passkeys", "users"]
+        },
+        "description": "获取所有注册用户列表"
+      },
+      "response": []
+    }
+  ]
+}
+
