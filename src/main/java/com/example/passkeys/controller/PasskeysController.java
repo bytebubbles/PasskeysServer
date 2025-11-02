@@ -227,7 +227,19 @@ public class PasskeysController {
     private PublicKeyCredential<AuthenticatorAttestationResponse, ClientRegistrationExtensionOutputs> 
             parseRegistrationCredential(JsonNode credentialNode) throws JsonProcessingException, IOException {
         
-        String credentialJson = objectMapper.writeValueAsString(credentialNode);
+        log.info("🔍 解析注册凭证前 - 原始字段: {}", credentialNode.fieldNames());
+        log.info("🔍 是否包含 extensionsOutputs: {}", credentialNode.has("extensionsOutputs"));
+        log.info("🔍 是否包含 clientExtensionResults: {}", credentialNode.has("clientExtensionResults"));
+        
+        // 预处理：将 extensionsOutputs 字段重命名为 clientExtensionResults
+        // 这是为了兼容某些客户端实现（如 Android）使用不同的字段名
+        JsonNode processedNode = normalizeExtensionsField(credentialNode);
+        
+        log.info("🔍 解析注册凭证后 - 处理后字段: {}", processedNode.fieldNames());
+        
+        String credentialJson = objectMapper.writeValueAsString(processedNode);
+        log.info("🔍 最终 JSON: {}", credentialJson);
+        
         return PublicKeyCredential.parseRegistrationResponseJson(credentialJson);
     }
     
@@ -237,7 +249,10 @@ public class PasskeysController {
     private PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs> 
             parseAuthenticationCredential(JsonNode credentialNode) throws JsonProcessingException, IOException {
         
-        String credentialJson = objectMapper.writeValueAsString(credentialNode);
+        // 预处理：将 extensionsOutputs 字段重命名为 clientExtensionResults
+        JsonNode processedNode = normalizeExtensionsField(credentialNode);
+        
+        String credentialJson = objectMapper.writeValueAsString(processedNode);
         return PublicKeyCredential.parseAssertionResponseJson(credentialJson);
     }
     
@@ -250,6 +265,39 @@ public class PasskeysController {
         response.put("error", message);
         response.put("timestamp", System.currentTimeMillis());
         return response;
+    }
+    
+    /**
+     * 规范化扩展字段名
+     * 移除非标准的 extensionsOutputs 字段，保留标准的 clientExtensionResults 字段
+     */
+    private JsonNode normalizeExtensionsField(JsonNode credentialNode) {
+        if (credentialNode.has("extensionsOutputs")) {
+            try {
+                // 使用 deepCopy 创建可变副本
+                com.fasterxml.jackson.databind.node.ObjectNode mutableNode = 
+                        ((com.fasterxml.jackson.databind.node.ObjectNode) credentialNode).deepCopy();
+                
+                // 移除非标准的 extensionsOutputs 字段
+                // 如果 clientExtensionResults 不存在，则将 extensionsOutputs 重命名为 clientExtensionResults
+                // 如果 clientExtensionResults 已存在，则直接移除 extensionsOutputs
+                if (!mutableNode.has("clientExtensionResults")) {
+                    JsonNode extensionsOutputs = mutableNode.remove("extensionsOutputs");
+                    if (extensionsOutputs != null) {
+                        mutableNode.set("clientExtensionResults", extensionsOutputs);
+                        log.info("✅ 已将 extensionsOutputs 重命名为 clientExtensionResults");
+                    }
+                } else {
+                    mutableNode.remove("extensionsOutputs");
+                    log.info("✅ 已移除重复的 extensionsOutputs 字段（保留 clientExtensionResults）");
+                }
+                
+                return mutableNode;
+            } catch (Exception e) {
+                log.error("⚠️ 字段转换失败，使用原始节点", e);
+            }
+        }
+        return credentialNode;
     }
 }
 

@@ -42,11 +42,29 @@ public class WebAuthnConfig {
         
         // 支持多个来源（Web 和 Android）
         Set<String> origins = new HashSet<>();
-        origins.add("http://localhost:8080");
-        origins.add("https://localhost:8080");
-        // Android 应用的来源格式
-        origins.add("android:apk-key-hash:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+        //origins.add("http://localhost:8080");
+        //origins.add("https://localhost:8080");
         
+        // Android 应用的来源格式
+        // rpOrigin 可能是完整的 android:apk-key-hash:... 格式，也可能只是哈希值
+//        if (rpOrigin != null && !rpOrigin.isEmpty()) {
+//            if (rpOrigin.startsWith("android:apk-key-hash:")) {
+//                // 如果已经是完整格式，直接添加
+//                origins.add(rpOrigin);
+//            } else if (rpOrigin.startsWith("http://") || rpOrigin.startsWith("https://")) {
+//                // 如果是 HTTP/HTTPS origin，直接添加
+//                origins.add(rpOrigin);
+//            } else {
+//                // 如果只是哈希值，添加前缀
+//                origins.add("android:apk-key-hash:" + rpOrigin);
+//            }
+//        }
+//
+        // 添加 Android 应用的实际哈希（Base64 URL 编码格式）
+        // 从错误信息中获取的实际 origin
+        origins.add("android:apk-key-hash:RLzsOERGQxO/pMp7NrqhLJ9as+BkYS5L2cCrGPQ9TY4");
+        origins.add("android:apk-key-hash:RLzsOERGQxO_pMp7NrqhLJ9as-BkYS5L2cCrGPQ9TY4");
+
         return RelyingParty.builder()
                 .identity(rpIdentity)
                 .credentialRepository(userRepository)

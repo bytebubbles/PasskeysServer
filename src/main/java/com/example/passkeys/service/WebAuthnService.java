@@ -37,10 +37,12 @@ public class WebAuthnService {
     }
     
     // 临时存储注册请求（实际生产环境应使用 Redis 等）
+    // Key: username, Value: 注册选项
     private final Map<String, PublicKeyCredentialCreationOptions> registrationRequests = 
             new ConcurrentHashMap<>();
     
     // 临时存储认证请求（实际生产环境应使用 Redis 等）
+    // Key: username 或 requestId, Value: 认证请求
     private final Map<String, AssertionRequest> assertionRequests = 
             new ConcurrentHashMap<>();
     
@@ -73,6 +75,7 @@ public class WebAuthnService {
         // 构建注册选项
         StartRegistrationOptions registrationOptions = StartRegistrationOptions.builder()
                 .user(user.toUserIdentity())
+                .timeout(60000)
                 .authenticatorSelection(AuthenticatorSelectionCriteria.builder()
                         // 要求使用平台认证器（如 Android 生物识别）
                         .authenticatorAttachment(AuthenticatorAttachment.PLATFORM)
@@ -85,12 +88,11 @@ public class WebAuthnService {
         
         PublicKeyCredentialCreationOptions options = relyingParty.startRegistration(registrationOptions);
         
-        // 保存注册请求用于后续验证
-        String requestId = generateRequestId();
-        registrationRequests.put(requestId, options);
+        // 保存注册请求用于后续验证（使用 username 作为 key）
+        registrationRequests.put(username, options);
         
-        log.info("生成注册选项 - 请求ID: {}, Challenge: {}", 
-                requestId, options.getChallenge().getBase64Url());
+        log.info("生成注册选项 - 用户名: {}, Challenge: {}", 
+                username, options.getChallenge().getBase64Url());
         
         return options;
     }
@@ -113,8 +115,8 @@ public class WebAuthnService {
         User user = userRepository.findByUsername(username)
                 .orElseThrow(() -> new IllegalArgumentException("用户不存在: " + username));
         
-        // 查找对应的注册请求
-        PublicKeyCredentialCreationOptions requestOptions = findRegistrationRequest(credential);
+        // 查找对应的注册请求（传递 username 参数）
+        PublicKeyCredentialCreationOptions requestOptions = findRegistrationRequest(credential, username);
         
         // 验证并完成注册
         FinishRegistrationOptions options = FinishRegistrationOptions.builder()
@@ -267,16 +269,29 @@ public class WebAuthnService {
     
     /**
      * 查找注册请求
+     * 
+     * @param credential 客户端返回的凭证
+     * @param username 用户名
+     * @return 对应的注册选项
      */
     private PublicKeyCredentialCreationOptions findRegistrationRequest(
-            PublicKeyCredential<AuthenticatorAttestationResponse, ?> credential) {
+            PublicKeyCredential<AuthenticatorAttestationResponse, ?> credential,
+            String username) {
         
-        // 简化处理：查找匹配的请求
-        // 生产环境应该通过 session 或其他机制精确匹配
-        for (PublicKeyCredentialCreationOptions options : registrationRequests.values()) {
-            return options; // 返回第一个（Demo 简化处理）
+        PublicKeyCredentialCreationOptions options = registrationRequests.get(username);
+        
+        if (options == null) {
+            log.error("找不到用户 {} 的注册请求", username);
+            throw new IllegalArgumentException("找不到对应的注册请求，请重新开始注册流程");
         }
-        throw new IllegalArgumentException("找不到对应的注册请求");
+        
+        log.info("找到注册请求 - 用户名: {}, Challenge: {}", 
+                username, options.getChallenge().getBase64Url());
+        
+        // 验证完成后移除请求（防止重放攻击）
+        registrationRequests.remove(username);
+        
+        return options;
     }
     
     /**
