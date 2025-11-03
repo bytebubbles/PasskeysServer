@@ -192,7 +192,7 @@ public class WebAuthnService {
             String requestId) 
             throws AssertionFailedException {
         
-        log.info("完成认证流程 - 凭证ID: {}, 请求ID: {}", credential.getId().getBase64Url(), requestId);
+        //log.info("完成认证流程 - 凭证ID: {}, 请求ID: {}", credential.getId().getBase64Url(), requestId);
         
         // 查找对应的认证请求
         AssertionRequest request = findAssertionRequest(requestId);

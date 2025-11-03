@@ -143,9 +143,11 @@ public class PasskeysController {
             @RequestBody(required = false) AuthenticationRequest request) {
         
         try {
-            String username = request != null ? request.getUsername() : null;
-            log.info("收到认证请求 - 用户名: {}", username != null ? username : "可发现凭证");
-            
+            //String username = request != null ? request.getUsername() : null;
+            //log.info("收到认证请求 - 用户名: {}", username != null ? username : "可发现凭证");
+
+            //写死发现所有可用凭证
+            String username = "";
             Map<String, Object> result = webAuthnService.startAuthentication(username);
             String requestId = (String) result.get("requestId");
             AssertionRequest assertionRequest = (AssertionRequest) result.get("request");
