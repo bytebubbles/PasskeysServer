@@ -146,10 +146,13 @@ public class PasskeysController {
             String username = request != null ? request.getUsername() : null;
             log.info("收到认证请求 - 用户名: {}", username != null ? username : "可发现凭证");
             
-            AssertionRequest assertionRequest = webAuthnService.startAuthentication(username);
+            Map<String, Object> result = webAuthnService.startAuthentication(username);
+            String requestId = (String) result.get("requestId");
+            AssertionRequest assertionRequest = (AssertionRequest) result.get("request");
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
+            response.put("requestId", requestId);
             response.put("options", assertionRequest.getPublicKeyCredentialRequestOptions());
             
             return ResponseEntity.ok(response);
@@ -165,22 +168,23 @@ public class PasskeysController {
      * 完成认证流程
      * 
      * POST /api/passkeys/authenticate/finish
-     * Body: { "credential": {...} }
+     * Body: { "requestId": "...", "credential": {...} }
      */
     @PostMapping("/authenticate/finish")
     public ResponseEntity<Map<String, Object>> finishAuthentication(
             @RequestBody JsonNode requestBody) {
         
         try {
+            String requestId = requestBody.get("requestId").asText();
             JsonNode credentialNode = requestBody.get("credential");
             
-            log.info("完成认证");
+            log.info("完成认证 - 请求ID: {}", requestId);
             
             // 解析凭证
             PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs> credential = 
                     parseAuthenticationCredential(credentialNode);
             
-            Map<String, Object> result = webAuthnService.finishAuthentication(credential);
+            Map<String, Object> result = webAuthnService.finishAuthentication(credential, requestId);
             
             return ResponseEntity.ok(result);
             

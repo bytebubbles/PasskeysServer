@@ -147,9 +147,9 @@ public class WebAuthnService {
      * 开始认证流程
      * 
      * @param username 用户名（可选，如果为空则使用可发现凭证）
-     * @return 认证选项（AssertionRequest）
+     * @return 包含 requestId 和认证选项的 Map
      */
-    public AssertionRequest startAuthentication(String username) {
+    public Map<String, Object> startAuthentication(String username) {
         log.info("开始认证流程 - 用户名: {}", username != null ? username : "可发现凭证");
         
         StartAssertionOptions.StartAssertionOptionsBuilder optionsBuilder = 
@@ -172,23 +172,30 @@ public class WebAuthnService {
         log.info("生成认证选项 - 请求ID: {}, Challenge: {}", 
                 requestId, request.getPublicKeyCredentialRequestOptions().getChallenge().getBase64Url());
         
-        return request;
+        // 返回 requestId 和认证选项
+        Map<String, Object> result = new HashMap<>();
+        result.put("requestId", requestId);
+        result.put("request", request);
+        
+        return result;
     }
     
     /**
      * 完成认证流程
      * 
      * @param credential 客户端返回的凭证
+     * @param requestId 认证请求ID
      * @return 认证结果和用户信息
      */
     public Map<String, Object> finishAuthentication(
-            PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs> credential) 
+            PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs> credential,
+            String requestId) 
             throws AssertionFailedException {
         
-        log.info("完成认证流程 - 凭证ID: {}", credential.getId().getBase64Url());
+        log.info("完成认证流程 - 凭证ID: {}, 请求ID: {}", credential.getId().getBase64Url(), requestId);
         
         // 查找对应的认证请求
-        AssertionRequest request = findAssertionRequest(credential);
+        AssertionRequest request = findAssertionRequest(requestId);
         
         // 验证并完成认证
         FinishAssertionOptions options = FinishAssertionOptions.builder()
@@ -296,16 +303,25 @@ public class WebAuthnService {
     
     /**
      * 查找认证请求
+     * 
+     * @param requestId 请求ID
+     * @return 对应的认证请求
      */
-    private AssertionRequest findAssertionRequest(
-            PublicKeyCredential<AuthenticatorAssertionResponse, ?> credential) {
+    private AssertionRequest findAssertionRequest(String requestId) {
+        AssertionRequest request = assertionRequests.get(requestId);
         
-        // 简化处理：查找匹配的请求
-        // 生产环境应该通过 session 或其他机制精确匹配
-        for (AssertionRequest request : assertionRequests.values()) {
-            return request; // 返回第一个（Demo 简化处理）
+        if (request == null) {
+            log.error("找不到请求ID {} 的认证请求", requestId);
+            throw new IllegalArgumentException("找不到对应的认证请求，请重新开始认证流程");
         }
-        throw new IllegalArgumentException("找不到对应的认证请求");
+        
+        log.info("找到认证请求 - 请求ID: {}, Challenge: {}", 
+                requestId, request.getPublicKeyCredentialRequestOptions().getChallenge().getBase64Url());
+        
+        // 验证完成后移除请求（防止重放攻击）
+        assertionRequests.remove(requestId);
+        
+        return request;
     }
 }
 
