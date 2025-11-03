@@ -1,13 +1,15 @@
 package com.example.passkeys.config;
 
+import com.example.passkeys.Base64UrlUtils;
 import com.example.passkeys.repository.UserRepository;
 import com.yubico.webauthn.RelyingParty;
 import com.yubico.webauthn.data.RelyingPartyIdentity;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -22,13 +24,15 @@ public class WebAuthnConfig {
 
     @Value("${webauthn.rp.id:192.168.2.191}")
     private String rpId;
-    
+
     @Value("${webauthn.rp.name:Passkeys Demo Server}")
     private String rpName;
-    
+
     @Value("${webauthn.rp.origin:http://localhost:8080}")
     private String rpOrigin;
-    
+
+    private static final Logger log = LoggerFactory.getLogger(WebAuthnConfig.class);
+
     /**
      * 配置 RelyingParty（依赖方）
      * 这是 WebAuthn 服务器的核心配置
@@ -39,12 +43,12 @@ public class WebAuthnConfig {
                 .id(rpId)
                 .name(rpName)
                 .build();
-        
+
         // 支持多个来源（Web 和 Android）
         Set<String> origins = new HashSet<>();
         //origins.add("http://localhost:8080");
         //origins.add("https://localhost:8080");
-        
+
         // Android 应用的来源格式
         // rpOrigin 可能是完整的 android:apk-key-hash:... 格式，也可能只是哈希值
 //        if (rpOrigin != null && !rpOrigin.isEmpty()) {
@@ -64,6 +68,9 @@ public class WebAuthnConfig {
         // 从错误信息中获取的实际 origin
         origins.add("android:apk-key-hash:RLzsOERGQxO/pMp7NrqhLJ9as+BkYS5L2cCrGPQ9TY4");
         origins.add("android:apk-key-hash:RLzsOERGQxO_pMp7NrqhLJ9as-BkYS5L2cCrGPQ9TY4");
+        String baseurl = Base64UrlUtils.apkKeyHashToBase64Url("35:9E:3B:E6:83:AC:EC:78:AF:A6:23:C7:76:13:E1:0C:3F:D2:27:B6:49:2D:4E:5D:E5:B8:B9:01:AD:51:61:94");
+        log.info("baseurl: {}", baseurl);
+        origins.add("android:apk-key-hash:"+baseurl);
 
         return RelyingParty.builder()
                 .identity(rpIdentity)

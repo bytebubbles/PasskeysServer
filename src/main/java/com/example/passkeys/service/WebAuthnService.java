@@ -162,7 +162,7 @@ public class WebAuthnService {
         
         // 要求用户验证
         optionsBuilder.userVerification(UserVerificationRequirement.REQUIRED);
-        
+        optionsBuilder.timeout(60000);
         AssertionRequest request = relyingParty.startAssertion(optionsBuilder.build());
         
         // 保存认证请求用于后续验证
